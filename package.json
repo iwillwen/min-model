@@ -1,0 +1,19 @@
+{
+  "name": "min-model",
+  "version": "0.0.1",
+  "description": "A model layer for MinDB.",
+  "main": "./dist/model.js",
+  "devDependencies": {
+    "min": "^0.1.13",
+    "rollup": "^0.26.3",
+    "rollup-plugin-babel": "^2.4.0",
+    "rollup-plugin-commonjs": "^2.2.1",
+    "rollup-plugin-node-builtins": "^1.0.4",
+    "rollup-plugin-uglify": "^0.3.1"
+  },
+  "scripts": {
+    "build": "node_modules/.bin/rollup -c rollup.config.js"
+  },
+  "author": "iwillwen",
+  "license": "MIT"
+}

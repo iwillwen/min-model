@@ -1,0 +1,50 @@
+import min from 'min'
+import Model from '../'
+import { memStore } from './store'
+
+min.store = new memStore()
+Model.use(min)
+
+const Person = Model.extend('person', {
+  name: String,
+  age: 0 // Number
+})
+
+const persons = [
+  {
+    name: 'Will',
+    age: 20
+  },
+  {
+    name: 'Tim',
+    age: 19
+  },
+  {
+    name: 'Peter',
+    age: 19
+  },
+  {
+    name: 'Mike',
+    age: 35
+  },
+  {
+    name: 'Jason',
+    age: 63
+  }
+]
+
+Promise.all(persons.map(_person => {
+  return new Promise(resolve => {
+    const person = new Person(_person)
+
+    person.once('ready', resolve)
+  })
+}))
+  .then(() => {
+    const ageIndexer = Person.setIndex('age')
+
+    ageIndexer.on('ready', () => {
+      Person.search('age', 19)
+        .then(result => console.log(result))
+    })
+  })
