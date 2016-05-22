@@ -1,7 +1,8 @@
 # min-model
 
+![](https://img.shields.io/npm/v/min-model.svg) ![](https://img.shields.io/david/dev/iwillwen/min-model.svg)
 
-
+This is a model layer for [MinDB](https://github.com/iwillwen/mindb). It can make MinDB more human-friendly and more fit to the real application development.
 
 
 ## Installation
@@ -179,6 +180,23 @@ export default class NumberIndexer extends Model.BaseIndexer {
       ))
   }
 }
+```
+
+
+
+## Build `min-model`
+
+If you wanna build `min-model` by yourself, you need to clone the project to your machine and install the development dependences.
+
+```shell
+$ cd min-model
+$ npm install .
+```
+
+Make your change and run.
+
+```shell
+$ npm run-script build
 ```
 
 
