@@ -8,7 +8,7 @@ import {
 import Queue from './queue'
 import Indexer from './indexer'
 import { PendingSearchResult } from './search-result'
-import isEqual from 'lodash/isEqual'
+import { isEqual, isString, isNumber, isBoolean } from 'lodash'
 import { EventEmitter } from 'events'
 
 import { BaseIndexer, setIndexer } from './indexer'
@@ -31,6 +31,15 @@ class Model extends EventEmitter {
 
   // Create a new Model class
   static extend(name, columns) {
+
+    if (name && !columns) {
+      throw new Error('Model.extend() should receive 2 arguments, but received 1.')
+    }
+
+    if (!isString(name) && !columns) {
+      throw new Error('Model.extend() first argument must be a string.')
+    }
+
     const privates = {
       [prefixSymbol]: camel2Hyphen(name),
       [sequenceSymbol]: camel2Hyphen(name) + 's'
@@ -146,7 +155,7 @@ class Model extends EventEmitter {
         if (this.constructor[indexersSymbol] && this.constructor[indexersSymbol].has(key)) {
           const indexer = this.constructor[indexersSymbol].get(key)
 
-          return indexer.reindex(key, value, oldValue)
+          return indexer.reindex(this.key, value, oldValue)
         } else {
           return Promise.resolve()
         }
@@ -191,7 +200,22 @@ class Model extends EventEmitter {
   }
 
   validate(key, value) {
-    return value instanceof (this.constructor.validateData[key] || Object)
+    switch(this.constructor.validateData[key]) {
+      case String:
+        return isString(value)
+        break
+
+      case Number:
+        return isNumber(value)
+        break
+
+      case Boolean:
+        return isBoolean(value)
+        break
+
+      default:
+        return value instanceof (this.constructor.validateData[key] || Object)
+    }
   }
 
   static fetch(key) {
@@ -240,13 +264,13 @@ class Model extends EventEmitter {
           resolve(chainData.map(item => [ item._key, item[column] ]))
         } else {
           this.__min.smembers(this.sequence)
-            .then(ids => {
+            .then(keys => {
               const multi = this.__min.multi()
 
-              ids.forEach(itemKey => multi.hget(this.prefix + ':' + itemKey, column))
+              keys.forEach(itemKey => multi.hget(this.prefix + ':' + itemKey, column))
 
               return multi.exec()
-                .then(values => Promise.resolve(values.map((val, i) => [ ids[i], val ])))
+                .then(values => Promise.resolve(values.map((val, i) => [ keys[i], val ])))
             })
             .then(resolve)
             .catch(reject)
@@ -275,6 +299,28 @@ class Model extends EventEmitter {
         }),
       this
     )
+  }
+
+  static allInstances() {
+    return this.__min.exists(this.sequence)
+      .then(exists => {
+        if (exists) {
+          return this.__min.smembers(this.sequence)
+        } else {
+          return Promise.resolve([])
+        }
+      })
+      .then(keys => {
+        const multi = this.__min.multi()
+
+        keys.forEach(itemKey => multi.hgetall(this.prefix + ':' + itemKey))
+
+        return multi.exec()
+          .then(result => Promise.resolve(result.map((item, i) => {
+            item._key = keys[i]
+            return item
+          })))
+      })
   }
 }
 

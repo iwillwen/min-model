@@ -57,9 +57,9 @@ Model.use(min)
 Now, you can extend a model which you need to use. For example, here is a Contacts app, so we need to create a `Contact` model to perform every person in the list.
 
 ```javascript
-// Syntax: Model.extend(<columns: Object>)
+// Syntax: Model.extend(name: String, columns: Object)
 
-const Contact = Model.extend({
+const Contact = Model.extend('contact', {
   name: String,
   memo: 'There is nothing about him/her.',
   // `min-model` will automatically detect

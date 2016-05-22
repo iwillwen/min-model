@@ -4,7 +4,6 @@ export function SearchResult(value, context) {
   const promise = Promise.resolve(value)
 
   promise.search = function(key, query) {
-    console.log(key, query, value)
     return context.search(key, query, value, context)
   }
 

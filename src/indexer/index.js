@@ -68,6 +68,22 @@ export default class Index extends EventEmitter {
     return this.indexer.add(key, val)
   }
 
+  remove(key, val) {
+    if (!this.indexer) throw new ReferenceError('There not indexer available.')
+
+    if (!this.ready) {
+      return new Promise((resolve, reject) => {
+        this.indexer.once('ready', () => {
+          this.indexer.remove(key, val)
+            .then(resolve)
+            .catch(reject)
+        })
+      })
+    }
+
+    return this.indexer.remove(key, val)
+  }
+
   reindex(key, newValue, oldValue) {
     if (!this.indexer) throw new ReferenceError('There not indexer available.')
 

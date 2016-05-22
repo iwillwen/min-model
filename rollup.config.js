@@ -19,5 +19,5 @@ export default {
 
   format: 'umd',
   moduleName: 'Model',
-  dest: 'dist/model.js'
+  dest: 'dest/model.js'
 }

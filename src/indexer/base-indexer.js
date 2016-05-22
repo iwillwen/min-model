@@ -14,7 +14,14 @@ export default class BaseIndexer extends EventEmitter {
   }
 
   map() {
-    this.__min.smembers(this.sequence)
+    this.__min.exists(this.sequence)
+      .then(exists => {
+        if (exists) {
+          return this.__min.smembers(this.sequence)
+        } else {
+          return Promise.resolve([])
+        }
+      })
       .then(keys => {
         const multi = this.__min.multi()
 
