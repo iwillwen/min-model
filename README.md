@@ -70,6 +70,12 @@ const Contact = Model.extend({
 
 `Model.extend` receives an object that declares columns of the model. Is can include the native type constructor or the default value of a new one.
 
+```javascript
+const contact = new Contact({
+  name: 'Will Wen Gunn',
+  number: 13800138000
+})
+```
 
 
 Here are the constructor of the Model and its subclasses.
