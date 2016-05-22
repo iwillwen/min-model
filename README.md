@@ -21,6 +21,19 @@ Of course, you can include it into your page with `<script>` tag.
 
 BTW, `min-model` is also friendly with [browserify](browserify.org), [webpack](webpack.github.io) and [rollup](http://rollupjs.org/).
 
+### Polyfill
+
+`min-model` is using [Symbol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol), [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) and [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that are new features in ES2015.
+So unfortunately if you want to use `min-model` in the old browsers, you are need to include the polyfills to make them work. Such as [`es6-shim`](https://github.com/paulmillr/es6-shim) and [`es6-symbol`](https://github.com/medikoo/es6-symbol).
+
+```shell
+$ npm i es6-shim es6-symbol --save-dev
+```
+
+```javascript
+import 'es6-shim'
+import 'es6-symbol/implement'
+```
 
 
 ## Usage
