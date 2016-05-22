@@ -10,7 +10,7 @@ This is a model layer for [MinDB](https://github.com/iwillwen/mindb). It can mak
 `min-model` can be install by [NPM](http://npmjs.org).
 
 ```shell
-$ npm install min-model --save
+$ npm install min-model --save --production
 ```
 
 Of course, you can include it into your page with `<script>` tag.
