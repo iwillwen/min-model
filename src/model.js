@@ -8,7 +8,7 @@ import {
 import Queue from './queue'
 import Indexer from './indexer'
 import { PendingSearchResult } from './search-result'
-import { isEqual, isString, isNumber, isBoolean } from 'lodash'
+import { isEqual, isString, isNumber, isBoolean, isFunction } from 'lodash'
 import { EventEmitter } from 'events'
 
 import { BaseIndexer, setIndexer } from './indexer'
@@ -47,8 +47,14 @@ class Model extends EventEmitter {
 
     const validateData = {}
     const defaultData = {}
+    const methods = {}
 
     for (const column of Object.keys(columns)) {
+      if (isFunction(columns[column])) {
+        methods[column] = columns[column]
+        continue
+      }
+
       if (checkNativeType(columns[column])) {
         validateData[column] = columns[column]
         defaultData[column] = columns[column]()
@@ -77,6 +83,10 @@ class Model extends EventEmitter {
 
       static get defaultData() {
         return defaultData
+      }
+
+      static get $methods() {
+        return methods
       }
 
       get [Symbol.toStringTag]() {
@@ -110,7 +120,24 @@ class Model extends EventEmitter {
       }
 
       this[cacheSymbol] = merge({}, this.constructor.defaultData)
+
+      if (this.$methods.beforeValidate) {
+        content = this.$methods.beforeValidate.call(this, content)
+      }
+
+      const columns = Object.keys(content)
+
+      for (const key of columns) {
+        if (!this.validate(key, content[key])) {
+          throw new TypeError(`Type validate failed on column "${key}".`)
+        }
+      }
+
       this[cacheSymbol] = merge(this[cacheSymbol], content)
+
+      for (const name of this.constructor.$methods) {
+        this[name] = (...args) => this.constructor.$methods[name].call(this, ...args)
+      }
 
       this.__queue.push(() => {
         return this.__min.sadd(this.constructor.sequence, this.key)
@@ -124,7 +151,7 @@ class Model extends EventEmitter {
               }
             })
           ))
-      }, () => this.emit('ready'))
+      }, () => this.emit('ready', this))
       this.__queue.run()
     }
   }
@@ -197,6 +224,10 @@ class Model extends EventEmitter {
 
   get hashKey() {
     return this.constructor.prefix + ':' + this.key
+  }
+
+  get $methods() {
+    return this.constructor.$methods
   }
 
   validate(key, value) {

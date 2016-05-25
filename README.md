@@ -53,7 +53,6 @@ Model.use(min)
 ```
 
 
-
 Now, you can extend a model which you need to use. For example, here is a Contacts app, so we need to create a `Contact` model to perform every person in the list.
 
 ```javascript
@@ -166,13 +165,18 @@ After that, you can use `Model.setIndexer(type, Indexer)` to set up.
 
 
 ```javascript
+import moment from 'moment'
+// Here is a 3rd module named moment.js
+
 class FormatedDateIndexer extends Model.BaseIndexer {
   indexMapper(value) {
     // ...
     // value would like '2016-05-01'
-    return value.split('-').map(Number)
+    return moment(value).format('YYYY-MM-DD').split('-').map(Number)
   }
 }
+
+Model.setIndexer(Date, FormatedDateIndexer)
 ```
 
 
