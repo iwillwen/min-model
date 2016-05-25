@@ -96,6 +96,32 @@ The instances also have an event will be emitted.
 | ------- | ---------------------------------------- |
 | `ready` | When the instance data was stored in the database and be ready to process |
 
+**Lifecyle**
+
+The model instance have a lifecyle like following:
+
+- beforeValidate
+- beforeStore
+- ready
+- beforeUpdate
+- afterUpdate
+- beforeRemove
+- afterRemove
+
+These lifecycle hook can simply use in the `Model.extend()`.
+
+```javascript
+const Contact = Model.extend('contact', {
+  name: String,
+  memo: 'There is nothing about him/her.',
+  number: Number,
+
+  beforeValidata(content) {
+    // convert the number to integer
+    content.age = parseInt(content)
+  }
+})
+```
 
 
 For real application development, the subclasses of Model also have some static methods for management and searching.

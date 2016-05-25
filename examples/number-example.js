@@ -7,7 +7,11 @@ Model.use(min)
 
 const Person = Model.extend('person', {
   name: String,
-  age: 0 // Number
+  age: 0, // Number,
+
+  beforeValidate(content) {
+    content.age = parseInt(content.age)
+  }
 })
 
 const persons = [
@@ -29,7 +33,7 @@ const persons = [
   },
   {
     name: 'Jason',
-    age: 63
+    age: '63'
   }
 ]
 
@@ -41,10 +45,10 @@ Promise.all(persons.map(_person => {
   })
 }))
   .then(() => {
-    const ageIndexer = Person.setIndex('age')
+    Person.setIndex('age')
 
-    ageIndexer.on('ready', () => {
-      Person.search('age', 19)
-        .then(result => console.log(result))
-    })
+    Person.search('age', 63)
+      .then(result => {
+        console.log(result)
+      })
   })

@@ -50,7 +50,7 @@ class Model extends EventEmitter {
     const methods = {}
 
     for (const column of Object.keys(columns)) {
-      if (isFunction(columns[column])) {
+      if (isFunction(columns[column]) && !checkNativeType(columns[column])) {
         methods[column] = columns[column]
         continue
       }
@@ -121,8 +121,13 @@ class Model extends EventEmitter {
 
       this[cacheSymbol] = merge({}, this.constructor.defaultData)
 
+      // Lifecyle: beforeValidate
       if (this.$methods.beforeValidate) {
-        content = this.$methods.beforeValidate.call(this, content)
+        const rtn = this.$methods.beforeValidate.call(this, content)
+
+        if (rtn) {
+          content = rtn
+        }
       }
 
       const columns = Object.keys(content)
@@ -135,11 +140,17 @@ class Model extends EventEmitter {
 
       this[cacheSymbol] = merge(this[cacheSymbol], content)
 
-      for (const name of this.constructor.$methods) {
+      for (const name of Object.keys(this.constructor.$methods)) {
         this[name] = (...args) => this.constructor.$methods[name].call(this, ...args)
       }
 
       this.__queue.push(() => {
+
+        // Lifecyle: beforeStore
+        if (this.$methods.beforeStore) {
+          this.$methods.beforeStore.call(this)
+        }
+
         return this.__min.sadd(this.constructor.sequence, this.key)
           .then(() => this.__min.hmset(this.hashKey, this[cacheSymbol]))
           .then(() => Promise.all(
@@ -151,7 +162,14 @@ class Model extends EventEmitter {
               }
             })
           ))
-      }, () => this.emit('ready', this))
+      }, () => {
+        // Lifecyle: ready
+        if (this.$methods.ready) {
+          this.$methods.ready.call(this)
+        }
+
+        this.emit('ready', this)
+      })
       this.__queue.run()
     }
   }
@@ -175,6 +193,11 @@ class Model extends EventEmitter {
 
     const oldValue = this[cacheSymbol][key]
 
+    // Lifecyle: beforeUpdate
+    if (this.$methods.beforeUpdate) {
+      this.$methods.beforeUpdate.call(this, key, value, oldValue)
+    }
+
     this[cacheSymbol][key] = value
 
     return this.__min.hset(this.hashKey, key, value)
@@ -187,7 +210,14 @@ class Model extends EventEmitter {
           return Promise.resolve()
         }
       })
-      .then(() => Promise.resolve([ key, value ]))
+      .then(() => {
+        // Lifecyle: afterUpdate
+        if (this.$methods.afterUpdate) {
+          this.$methods.afterUpdate.call(this, key, value, oldValue)
+        }
+
+        Promise.resolve([ key, value ])
+      })
   }
 
   reset(key = null) {
@@ -203,6 +233,11 @@ class Model extends EventEmitter {
   }
 
   remove() {
+    // Lifecyle: beforeRemove
+    if (this.$methods.beforeRemove) {
+      this.$methods.beforeRemove.call(this)
+    }
+
     this.__min.srem(this.constructor.sequence, this.key)
       .then(() => this.__min.del(this.hashKey))
       .then(() => Promise.all(
@@ -217,6 +252,11 @@ class Model extends EventEmitter {
       .then(() => {
         this.key = null
         this[cacheSymbol] = null
+
+        // Lifecyle: afterRemove
+        if (this.$methods.afterRemove) {
+          this.$methods.afterRemove.call(this)
+        }
 
         return Promise.resolve()
       })
