@@ -8,7 +8,7 @@ import {
 import Queue from './queue'
 import Indexer from './indexer'
 import { PendingSearchResult } from './search-result'
-import { isEqual, isString, isNumber, isBoolean, isFunction } from 'lodash'
+import { isEqual, isString, isNumber, isBoolean, isFunction, isArray } from 'lodash'
 import { EventEmitter } from 'events'
 
 import { BaseIndexer, setIndexer } from './indexer'
@@ -56,6 +56,10 @@ class Model extends EventEmitter {
       }
 
       if (checkNativeType(columns[column])) {
+        if (isArray(columns[column]) && columns[column].length === 1 && isFunction(columns[column][0])) {
+          // TODO: Add Array of Model support
+        }
+
         validateData[column] = columns[column]
         defaultData[column] = columns[column]()
       } else {
@@ -171,6 +175,14 @@ class Model extends EventEmitter {
         this.emit('ready', this)
       })
       this.__queue.run()
+    }
+  }
+
+  getCacheData(key = null) {
+    if (!key) {
+      return this[cacheSymbol]
+    } else {
+      return this[cacheSymbol][key]
     }
   }
 
