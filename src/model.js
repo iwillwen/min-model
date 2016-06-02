@@ -120,6 +120,7 @@ class Model extends EventEmitter {
       this.key = key
       this[cacheSymbol] = content
     } else {
+
       if (!content) {
         content = key
         this.key = Math.random().toString(32).substr(2)
@@ -171,6 +172,7 @@ class Model extends EventEmitter {
             })
           ))
       }, () => {
+
         // Lifecyle: ready
         if (this.$methods.ready) {
           this.$methods.ready.call(this)
@@ -388,7 +390,7 @@ class Model extends EventEmitter {
     )
   }
 
-  static allInstances() {
+  static dump() {
     return this.__min.exists(this.sequence)
       .then(exists => {
         if (exists) {
@@ -403,8 +405,18 @@ class Model extends EventEmitter {
         keys.forEach(itemKey => multi.hgetall(this.prefix + ':' + itemKey))
 
         return multi.exec()
-          .then(result => Promise.resolve(result.map((item, i) => new this(keys[i], item))))
+          .then(items => Promise.resolve(
+            items.map((item, i) => {
+              item._key = keys[i]
+              return item
+            })
+          ))
       })
+  }
+
+  static allInstances() {
+    return this.dump()
+      .then(result => Promise.resolve(result.map(item => new this(item._key, item))))
   }
 }
 
