@@ -29,6 +29,8 @@ const typesMap = new Map([
   [ Error, ErrorIndexer ]
 ])
 
+const keysMap = new Map()
+
 export default class Index extends EventEmitter {
   constructor(sequence, prefix, key, type, min) {
     super()
@@ -38,18 +40,28 @@ export default class Index extends EventEmitter {
     this.key = key
     this.type = type
     this.ready = false
+    this.indexer = null
 
-    if (typesMap.has(type)) {
-      this.indexer = new (typesMap.get(type))(sequence, prefix, key, min)
-      this.indexer
-        .on('ready', () => {
-          this.ready = true
-          this.emit('ready')
-        })
-        .on('updated', () => this.emit('updated'))
-    } else {
-      throw new Error('Not support for this type.')
+    switch (true) {
+      case keysMap.has(`${sequence}:${key}`):
+        this.indexer = new (keysMap.get(`${sequence}:${key}`))(sequence, prefix, key, min)
+        break
+
+      case typesMap.has(type):
+        this.indexer = new (typesMap.get(type))(sequence, prefix, key, min)
+        break
+
+      default:
+        throw new Error('Not support for this type.')
     }
+
+    this.indexer.map()
+    this.indexer
+      .on('ready', () => {
+        this.ready = true
+        this.emit('ready')
+      })
+      .on('updated', () => this.emit('updated'))
   }
 
   add(key, val) {
@@ -123,4 +135,8 @@ export default class Index extends EventEmitter {
 export function setIndexer(type, indexerCtor) {
   typesMap.set(type, indexerCtor)
   typesMap.set(nameOfNativeType(type), indexerCtor)
+}
+
+export function setIndexerForColumn(key, indexerCtor) {
+  keysMap.set(key, indexerCtor)
 }

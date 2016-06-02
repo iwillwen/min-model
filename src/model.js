@@ -11,7 +11,7 @@ import { PendingSearchResult } from './search-result'
 import { isEqual, isString, isNumber, isBoolean, isFunction, isArray } from 'lodash'
 import { EventEmitter } from 'events'
 
-import { BaseIndexer, setIndexer } from './indexer'
+import { BaseIndexer, setIndexer, setIndexerForColumn } from './indexer'
 
 const prefixSymbol = Symbol('prefix')
 const sequenceSymbol = Symbol('sequence')
@@ -25,9 +25,11 @@ class Model extends EventEmitter {
     this.__min = min
   }
 
-  static BaseIndexer() { return BaseIndexer }
+  static get BaseIndexer() { return BaseIndexer }
 
-  static setIndexer(column, indexerCtor) { setIndexer(column, indexerCtor) }
+  static setIndexer(type, indexerCtor) { setIndexer(type, indexerCtor) }
+
+  static setIndexerForColumn(key, indexerCtor) { setIndexerForColumn(`${this.sequence}:${key}`, indexerCtor) }
 
   // Create a new Model class
   static extend(name, columns) {
@@ -73,6 +75,8 @@ class Model extends EventEmitter {
     const queue = new Queue()
 
     class _Model extends Model {
+      static get name() { return toStringTag }
+
       static get prefix() {
         return privates[prefixSymbol]
       }

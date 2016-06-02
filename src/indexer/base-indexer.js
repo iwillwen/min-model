@@ -9,8 +9,6 @@ export default class BaseIndexer extends EventEmitter {
     this.key = key
     this.__min = min
     this.ready = false
-
-    this.map()
   }
 
   map() {
@@ -31,17 +29,33 @@ export default class BaseIndexer extends EventEmitter {
           .then(values => Promise.resolve(values.map((val, i) => [ keys[i], val ])))
       })
       .then(tuples => {
-        const multi = this.__min.multi()
+        return new Promise((resolve, reject) => {
+          const multi = this.__min.multi()
 
-        for (const [ key, val ] of tuples) {
-          const indexes = this.indexMapper(val)
+          for (const [ key, val ] of tuples) {
+            if (!this.async) {
+              const indexes = this.indexMapper(val)
 
-          for (const index of indexes) {
-            multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key) 
+              for (const index of indexes) {
+                multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key) 
+              }
+
+              return multi.exec()
+            } else {
+              this.indexMapper(val)
+                .then(indexes => {
+                  for (const index of indexes) {
+                    multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key) 
+                  }
+
+                  multi.exec()
+                    .then(resolve)
+                    .catch(reject)
+                })
+                .catch(reject)
+            }
           }
-        }
-
-        return multi.exec()
+        })
       })
       .then((...args) => {
         this.ready = true
@@ -50,27 +64,45 @@ export default class BaseIndexer extends EventEmitter {
   }
 
   add(key, val) {
-    const indexes = this.indexMapper(val)
+    return (new Promise((resolve, reject) => {
+      if (!this.async) {
+        resolve(this.indexMapper(val))
+      } else {
+        this.indexMapper(val)
+          .then(resolve)
+          .catch(reject)
+      }
+    }))
+      .then(indexes => {
+        const multi = this.__min.multi()
 
-    const multi = this.__min.multi()
+        for (const index of indexes) {
+          multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key)
+        }
 
-    for (const index of indexes) {
-      multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key)
-    }
-
-    return multi.exec()
+        return multi.exec()
+      })
   }
 
   remove(key, val) {
-    const indexes = this.indexMapper(val)
+    return (new Promise((resolve, reject) => {
+      if (!this.async) {
+        resolve(this.indexMapper(val))
+      } else {
+        this.indexMapper(val)
+          .then(resolve)
+          .catch(reject)
+      }
+    }))
+      .then(indexes => {
+        const multi = this.__min.multi()
 
-    const multi = this.__min.multi()
+        for (const index of indexes) {
+          multi.srem(this.sequence + ':' + this.key + ':index:' + index, key)
+        }
 
-    for (const index of indexes) {
-      multi.srem(this.sequence + ':' + this.key + ':index:' + index, key)
-    }
-
-    return multi.exec()
+        return multi.exec()
+      })
   }
 
   reindex(key, newValue, oldValue) {
@@ -84,19 +116,28 @@ export default class BaseIndexer extends EventEmitter {
   }
 
   _search(query, chainData = null) {
-    const indexes = this.indexMapper(query)
-
-    return Promise.all(indexes.map(index => {
-      return this.__min.exists(this.sequence + ':' + this.key + ':index:' + index)
-        .then(exists => {
-          if (exists) {
-            return this.__min.smembers(this.sequence + ':' + this.key + ':index:' + index)
-          } else {
-            return Promise.resolve([])
-          }
-        })
-        .then(keys => Promise.resolve(new Set(keys)))
+    return (new Promise((resolve, reject) => {
+      if (!this.async) {
+        resolve(this.indexMapper(query))
+      } else {
+        this.indexMapper(query)
+          .then(resolve)
+          .catch(reject)
+      }
     }))
+      .then(indexes => {
+        return Promise.all(indexes.map(index => {
+          return this.__min.exists(this.sequence + ':' + this.key + ':index:' + index)
+            .then(exists => {
+              if (exists) {
+                return this.__min.smembers(this.sequence + ':' + this.key + ':index:' + index)
+              } else {
+                return Promise.resolve([])
+              }
+            })
+            .then(keys => Promise.resolve(new Set(keys)))
+        }))
+      })
       .then(keys => {
         const intersect = intersection(...keys)
 

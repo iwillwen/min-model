@@ -231,6 +231,37 @@ export default class NumberIndexer extends Model.BaseIndexer {
 }
 ```
 
+Of course, you can set the custom indexer just for a single column too.
+
+```javascript
+Contact.setIndexerForColumn('number', NumberIndexer)
+```
+
+
+
+**Async Indexer**
+
+In sometime, computing the indexes in the local device is not wise so we need to use some API to achieve.
+
+You need to set a property named `async` to be `true` and `indexMapper` method should returns a Promise object.
+
+```javascript
+class ChineseStringIndexer extends Model.BaseIndexer {
+  get async() { return true }
+
+  indexMapper(val) {
+    return new Promise((resolve, reject) => {
+      fetch(`http://api.pullword.com/get.php?source=${encodeURIComponent(val)}&param1=0.5&param2=0`)
+        .then(res => res.text())
+        .then(body => resolve(body.split('\r\n').filter(Boolean)))
+        .catch(reject)
+    })
+  }
+}
+
+Contact.setIndexerForColumn('name', ChineseStringIndexer)
+```
+
 
 
 ## Build `min-model`
