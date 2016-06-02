@@ -403,10 +403,7 @@ class Model extends EventEmitter {
         keys.forEach(itemKey => multi.hgetall(this.prefix + ':' + itemKey))
 
         return multi.exec()
-          .then(result => Promise.resolve(result.map((item, i) => {
-            item._key = keys[i]
-            return item
-          })))
+          .then(result => Promise.resolve(result.map((item, i) => new this(keys[i], item))))
       })
   }
 }
