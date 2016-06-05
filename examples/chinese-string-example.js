@@ -20,16 +20,12 @@ const contents = [
 ]
 
 class ChineseStringIndexer extends Model.BaseIndexer {
-
   get async() { return true }
 
   indexMapper(val) {
-    return new Promise((resolve, reject) => {
-      fetch(`http://api.pullword.com/get.php?source=${encodeURIComponent(val)}&param1=0.5&param2=0`)
-        .then(res => res.text())
-        .then(body => resolve(body.split('\r\n').filter(Boolean)))
-        .catch(reject)
-    })
+    return fetch(`http://pullword.leanapp.cn/get?source=${encodeURIComponent(val)}&threshold=0.5&json=1`)
+      .then(res => res.json())
+      .catch(() => Promise.resolve([ val ]))
   }
 }
 

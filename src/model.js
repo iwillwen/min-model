@@ -75,7 +75,7 @@ class Model extends EventEmitter {
     const queue = new Queue()
 
     class _Model extends Model {
-      static get name() { return toStringTag }
+      static get modelName() { return toStringTag }
 
       static get prefix() {
         return privates[prefixSymbol]
@@ -120,7 +120,6 @@ class Model extends EventEmitter {
       this.key = key
       this[cacheSymbol] = content
     } else {
-
       if (!content) {
         content = key
         this.key = Math.random().toString(32).substr(2)
@@ -148,40 +147,39 @@ class Model extends EventEmitter {
       }
 
       this[cacheSymbol] = merge(this[cacheSymbol], content)
+    }
 
-      for (const name of Object.keys(this.constructor.$methods)) {
-        this[name] = (...args) => this.constructor.$methods[name].call(this, ...args)
+    for (const name of Object.keys(this.constructor.$methods)) {
+      this[name] = (...args) => this.constructor.$methods[name].call(this, ...args)
+    }
+
+    this.__queue.push(() => {
+      // Lifecyle: beforeStore
+      if (this.$methods.beforeStore) {
+        this.$methods.beforeStore.call(this)
       }
 
-      this.__queue.push(() => {
+      return this.__min.sadd(this.constructor.sequence, this.key)
+        .then(() => this.__min.hmset(this.hashKey, this[cacheSymbol]))
+        .then(() => Promise.all(
+          Object.keys(this[cacheSymbol]).map(key => {
+            if (this.constructor[indexersSymbol] && this.constructor[indexersSymbol].has(key)) {
+              return this.constructor[indexersSymbol].get(key).add(this.key, this[cacheSymbol][key])
+            } else {
+              return Promise.resolve()
+            }
+          })
+        ))
+    }, () => {
 
-        // Lifecyle: beforeStore
-        if (this.$methods.beforeStore) {
-          this.$methods.beforeStore.call(this)
-        }
+      // Lifecyle: ready
+      if (this.$methods.ready) {
+        this.$methods.ready.call(this)
+      }
 
-        return this.__min.sadd(this.constructor.sequence, this.key)
-          .then(() => this.__min.hmset(this.hashKey, this[cacheSymbol]))
-          .then(() => Promise.all(
-            Object.keys(this[cacheSymbol]).map(key => {
-              if (this.constructor[indexersSymbol] && this.constructor[indexersSymbol].has(key)) {
-                return this.constructor[indexersSymbol].get(key).add(this.key, this[cacheSymbol][key])
-              } else {
-                return Promise.resolve()
-              }
-            })
-          ))
-      }, () => {
-
-        // Lifecyle: ready
-        if (this.$methods.ready) {
-          this.$methods.ready.call(this)
-        }
-
-        this.emit('ready', this)
-      })
-      this.__queue.run()
-    }
+      this.emit('ready', this)
+    })
+    this.__queue.run()
   }
 
   getCacheData(key = null) {

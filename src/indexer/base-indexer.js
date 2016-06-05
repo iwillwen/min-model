@@ -29,10 +29,10 @@ export default class BaseIndexer extends EventEmitter {
           .then(values => Promise.resolve(values.map((val, i) => [ keys[i], val ])))
       })
       .then(tuples => {
-        return new Promise((resolve, reject) => {
-          const multi = this.__min.multi()
+        return Promise.all(
+          tuples.map(([ key, val ]) => {
+            const multi = this.__min.multi()
 
-          for (const [ key, val ] of tuples) {
             if (!this.async) {
               const indexes = this.indexMapper(val)
 
@@ -42,20 +42,17 @@ export default class BaseIndexer extends EventEmitter {
 
               return multi.exec()
             } else {
-              this.indexMapper(val)
+              return this.indexMapper(val)
                 .then(indexes => {
                   for (const index of indexes) {
                     multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key) 
                   }
 
-                  multi.exec()
-                    .then(resolve)
-                    .catch(reject)
+                  return multi.exec()
                 })
-                .catch(reject)
             }
-          }
-        })
+          })
+        )
       })
       .then((...args) => {
         this.ready = true
