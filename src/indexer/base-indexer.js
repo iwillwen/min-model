@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import { isArray, isFunction } from 'lodash'
 
 export default class BaseIndexer extends EventEmitter {
   constructor(sequence, prefix, key, min) {
@@ -33,23 +34,22 @@ export default class BaseIndexer extends EventEmitter {
           tuples.map(([ key, val ]) => {
             const multi = this.__min.multi()
 
-            if (!this.async) {
-              const indexes = this.indexMapper(val)
-
+            const rtn = this.indexMapper(val)
+            if (isArray(rtn)) {
+              const indexes = rtn
               for (const index of indexes) {
                 multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key) 
               }
 
               return multi.exec()
-            } else {
-              return this.indexMapper(val)
-                .then(indexes => {
-                  for (const index of indexes) {
-                    multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key) 
-                  }
+            } else if (isPromise(rtn)) {
+              return rtn.then(indexes => {
+                for (const index of indexes) {
+                  multi.sadd(this.sequence + ':' + this.key + ':index:' + index, key) 
+                }
 
-                  return multi.exec()
-                })
+                return multi.exec()
+              })
             }
           })
         )
@@ -62,12 +62,12 @@ export default class BaseIndexer extends EventEmitter {
 
   add(key, val) {
     return (new Promise((resolve, reject) => {
-      if (!this.async) {
-        resolve(this.indexMapper(val))
-      } else {
-        this.indexMapper(val)
-          .then(resolve)
-          .catch(reject)
+      const rtn = this.indexMapper(val)
+
+      if (isArray(rtn)) {
+        resolve(rtn)
+      } else if (isPromise(rtn)) {
+        rtn.then(resolve).catch(reject)
       }
     }))
       .then(indexes => {
@@ -83,12 +83,12 @@ export default class BaseIndexer extends EventEmitter {
 
   remove(key, val) {
     return (new Promise((resolve, reject) => {
-      if (!this.async) {
-        resolve(this.indexMapper(val))
-      } else {
-        this.indexMapper(val)
-          .then(resolve)
-          .catch(reject)
+      const rtn = this.indexMapper(val)
+
+      if (isArray(rtn)) {
+        resolve(rtn)
+      } else if (isPromise(rtn)) {
+        return rtn.then(resolve).catch(reject)
       }
     }))
       .then(indexes => {
@@ -110,16 +110,19 @@ export default class BaseIndexer extends EventEmitter {
 
         return Promise.resolve()
       })
+      .catch(err => console.warn(`[min-model WARN] ${err.message}`))
   }
 
   _search(query, chainData = null) {
     return (new Promise((resolve, reject) => {
-      if (!this.async) {
-        resolve(this.indexMapper(query))
-      } else {
-        this.indexMapper(query)
-          .then(resolve)
-          .catch(reject)
+      const rtn = this.indexMapper(query)
+
+      if (isArray(rtn)) {
+        resolve(rtn)
+      } else if (isPromise(rtn)) {
+        rtn.then(data => {
+          resolve(data)
+        }).catch(reject)
       }
     }))
       .then(indexes => {
@@ -188,4 +191,8 @@ function intersection(set, ...sets) {
   }
 
   return ret
+}
+
+function isPromise(obj) {
+  return isFunction(obj.then) && isFunction(obj.catch)
 }

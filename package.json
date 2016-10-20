@@ -1,6 +1,6 @@
 {
   "name": "min-model",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "description": "A model layer for MinDB.",
   "main": "dest/model.js",
   "devDependencies": {

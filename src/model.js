@@ -254,7 +254,7 @@ class Model extends EventEmitter {
       this.$methods.beforeRemove.call(this)
     }
 
-    this.__min.srem(this.constructor.sequence, this.key)
+    return this.__min.srem(this.constructor.sequence, this.key)
       .then(() => this.__min.del(this.hashKey))
       .then(() => Promise.all(
         Object.keys(this[cacheSymbol]).map(key => {
@@ -335,8 +335,10 @@ class Model extends EventEmitter {
       const indexer = this[indexersSymbol].get(column)
 
       return indexer.search(query, chainData, this)
+        .then(results => results.map(content => new this(content._key, content)))
     } else {
       return this.__plainSearch(column, query, chainData)
+        .then(results => results.map(content => new this(content._key, content)))
     }
   }
 

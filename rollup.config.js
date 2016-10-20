@@ -19,5 +19,6 @@ export default {
 
   format: 'umd',
   moduleName: 'Model',
-  dest: 'dest/model.js'
+  dest: 'dest/model.js',
+  sourceMap: true
 }
