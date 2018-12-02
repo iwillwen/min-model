@@ -1,0 +1,14 @@
+export declare function camel2Hyphen(str: string): string;
+export declare function hyphen2Camel(str: string): string;
+export declare function checkNativeType(v: any): boolean;
+export declare function nameOfNativeType(v: any): any;
+export declare function isFunction(v: any): boolean;
+export declare function isString(v: any): boolean;
+export declare function isNumber(v: any): boolean;
+export declare function isBoolean(v: any): boolean;
+export declare function detectNativeType(v: any): any;
+export declare function merge(target: any, ...objs: any[]): any;
+export declare function deepEqual(actual: any, expected: any, opts?: any): boolean;
+export declare function isUndefinedOrNull(value: any): boolean;
+export declare function isBuffer(x: any): boolean;
+export declare function objEquiv(a: any, b: any, opts: any): boolean;

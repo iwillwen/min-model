@@ -1,17 +1,16 @@
 import BaseIndexer from './base-indexer'
 
-export default class ErrorIndexer extends BaseIndexer {
+export default class StringIndexer extends BaseIndexer {
 
-  // Overwrite ::indexMapper
-  indexMapper(error) {
+  indexMapper(str: string) {
     const set = new Set(
-      error.message
+      str
         .split(/[\s,\.;\:"'!]/)
         .filter(Boolean)
         .map(s => s.toLowerCase())
     )
 
-    return [...set]
+    return Array.from(set)
   }
 
 }

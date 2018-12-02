@@ -2,9 +2,8 @@ import BaseIndexer from './base-indexer'
 
 export default class ArrayIndexer extends BaseIndexer {
 
-  // Overwrite ::indexMapper
-  indexMapper(array) {
-    return array.map(el => JSON.stringify(el))
+  indexMapper(array: any[]) {
+    return array.map(item => JSON.stringify(item))
   }
 
 }

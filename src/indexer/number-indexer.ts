@@ -3,7 +3,7 @@ import BaseIndexer from './base-indexer'
 export default class NumberIndexer extends BaseIndexer {
 
   // Overwrite ::indexMapper
-  indexMapper(number) {
+  indexMapper(number: number) {
     return [
       number % 3,
       number % 5,
@@ -11,10 +11,8 @@ export default class NumberIndexer extends BaseIndexer {
     ]
   }
 
-  search(query, chainData) {
-    return this._search(query, chainData)
-      .then(result => Promise.resolve(
-        result.filter(item => item[this.key] === query)
-      ))
+  async search(query: number, chainData: any[]) {
+    const results: any[] = await this.search(query, chainData)
+    return results.filter(item => item[this.key] === query)
   }
 }
